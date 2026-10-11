@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "harness/review-findings",
+  "title": "Harness review findings",
+  "description": "The machine-readable block every harness-reviewer report ends with. The orchestrator reads verdict and the BLOCKER list; nothing else in the report is parsed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ticket", "fixed_point", "head", "gate", "verdict", "findings", "counts"],
+  "properties": {
+    "ticket": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*-[0-9]+$" },
+    "fixed_point": { "type": "string", "description": "the base ref the three-dot diff was taken against" },
+    "head": { "type": "string", "description": "commit reviewed" },
+    "gate": { "type": "string", "enum": ["GREEN", "GREEN with warnings", "RED"], "description": "review-gate.sh result the reviewer confirmed before reading the diff" },
+    "verdict": { "type": "string", "enum": ["CLEAN", "BLOCKED"], "description": "BLOCKED iff at least one BLOCKER remains open" },
+    "mode": { "type": "string", "enum": ["broad-1", "broad-2", "targeted-verify", "adr"], "description": "which pass this report is" },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "severity", "axis", "file", "evidence", "why"],
+        "properties": {
+          "id": { "type": "string", "description": "stable id, e.g. Sp2 / St1; reused verbatim by later passes" },
+          "severity": { "type": "string", "enum": ["BLOCKER", "MAJOR", "MINOR"] },
+          "axis": { "type": "string", "enum": ["spec", "standards"] },
+          "file": { "type": "string" },
+          "line": { "type": ["integer", "null"] },
+          "evidence": { "type": "string", "minLength": 1, "description": "the offending snippet or probe output: never a paraphrase" },
+          "why": { "type": "string", "minLength": 1, "description": "the AC line, ADR sentence or repo rule it violates, quoted" },
+          "fix": { "type": "string", "description": "the smallest change that closes it" },
+          "status": { "type": "string", "enum": ["open", "closed", "withdrawn"], "default": "open", "description": "targeted-verify passes set closed/withdrawn per id" },
+          "cheap_check": { "type": "boolean", "description": "true if a script (gate) could have caught it: feeds the gate backlog" }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["blocker", "major", "minor"],
+      "properties": { "blocker": { "type": "integer" }, "major": { "type": "integer" }, "minor": { "type": "integer" } }
+    },
+    "disclosures": { "type": "array", "items": { "type": "string" }, "description": "owner rulings / deviations the PR must carry" }
+  }
+}

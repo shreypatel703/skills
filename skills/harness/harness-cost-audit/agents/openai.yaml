@@ -1,0 +1,3 @@
+interface:
+  display_name: "Harness Cost Audit"
+  short_description: "Measure what a window of agent work cost"

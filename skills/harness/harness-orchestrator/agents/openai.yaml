@@ -1,0 +1,3 @@
+interface:
+  display_name: "Harness Orchestrator"
+  short_description: "Run one bounded wave of ticket implementation"
