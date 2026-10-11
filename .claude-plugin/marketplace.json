@@ -1,15 +1,14 @@
 {
-  "name": "mattpocock",
+  "name": "shrey",
   "owner": {
-    "name": "Matt Pocock",
-    "url": "https://www.aihero.dev"
+    "name": "Shrey Patel"
   },
-  "description": "Matt Pocock's skills for real engineering, as an installable Claude Code plugin.",
+  "description": "Shrey's fork of mattpocock/skills with the orchestration harness.",
   "plugins": [
     {
-      "name": "mattpocock-skills",
+      "name": "shrey-skills",
       "source": "./",
-      "description": "Matt Pocock's agent skills for real engineering (grilling, spec/ticket flows, TDD, code review, domain modelling and more).",
+      "description": "Matt Pocock's engineering skills plus a project-configurable orchestration harness (orchestrator, implementer, reviewer, UI tester, hooks that enforce bounds and model routing).",
       "category": "engineering",
       "keywords": [
         "engineering",
