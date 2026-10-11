@@ -1,0 +1,40 @@
+{
+  "description": "Harness bounds as code: sleep-polling, full-suite reruns, unsafe git, model routing, the broad-review cap, pre-authorised questions, cost log. No-op in any project without docs/agents/harness.toml.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/harness/hooks/session_start.py\"", "timeout": 10 }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/harness/hooks/pre_bash_guard.py\"", "timeout": 10 }
+        ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/harness/hooks/pre_agent_guard.py\"", "timeout": 10 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/harness/hooks/stop_guard.py\"", "timeout": 20 }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/harness/hooks/stop_guard.py\"", "timeout": 20 }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,100 @@
+# Harness config template AND the plugin defaults (one file, so they cannot drift).
+# `setup-harness` copies this into a project as docs/agents/harness.toml and fills it in.
+# Hooks deep-merge the project's copy over this file (harness/lib/harness_config.py), so a
+# key a project leaves out falls back to the value here.
+#
+# Numbers carry their reason in a comment. A number without a measured reason does not
+# belong here; it belongs in the project file, with the project's reason.
+
+schema = 1
+
+[project]
+name = ""                       # display name, e.g. "Puzzle"
+ticket_prefix = ""              # e.g. "PZL", "CUE", "COS"; ids match <prefix>-<digits>
+worktree = "../{repo}-{id}"     # where an implementer's worktree goes
+branch = "{id}-{slug}"
+
+# Role -> tier. Tier -> model is per tool, below. Escalate a tier only when the lower one
+# failed to run or ignored a binding decision twice, never because a ticket "sounds hard".
+[tiers]
+orchestrator = "default"        # measured 2026-10-04..11: sonnet orchestrators ran clean in Puzzle and Cue
+implementer = "default"
+reviewer_first = "frontier"     # the first broad review of a code ticket
+reviewer_verify = "default"     # targeted re-verify of named finding ids
+adr_reviewer = "default"
+merge_resolver = "mechanical"
+ui_tester = "default"
+research = "default"
+
+[models.claude]
+mechanical = "haiku"
+default = "sonnet"
+frontier = "opus"
+
+[models.codex]                  # used as `codex exec --profile <tier>`; the profiles live in ~/.codex/config.toml
+mechanical = "mechanical"
+default = "default"
+frontier = "frontier"
+
+# Which tool runs a role. "claude" spawns a subagent; "codex" runs `codex exec`.
+[runner]
+default = "claude"
+ui_tester = "claude"
+
+[bounds]
+broad_reviews = 2               # PZL-98 ran 9 rounds and was rewritten from scratch in 6 min
+adr_reviews = 1                 # 8 ADRs cost $465 under two-axis code review
+review_rounds_per_gate = 2      # Career OS 2026-10-09: 109 review threads for 9 tickets
+context_restart = 200_000       # a subagent past this writes its report and is restarted
+full_suite_per_loop = 1         # 46 full runs in 23 threads, 2026-10-04..11
+pr_code_lines_warn = 400        # code only; tests and fixtures are counted separately
+pr_code_lines_fail = 800
+max_unlanded_stack = 3          # deeper stacks ended in a 31.5k-line merge, 2026-10-10
+concurrent_tickets = 2          # disjoint file ownership required
+
+[enforce]
+tiers = "warn"                  # "warn" logs over-tier spawns to <paths.state>/run.log; "block" refuses them
+
+[gate]                          # commands; {base} {tests} {files} are substituted
+command = ""                    # the one gate an orchestrator runs before any review, e.g. "scripts/agents/review-gate.sh --base {base} --tests '{tests}'"
+full_suite = ""                 # e.g. "make test"; the bash guard counts runs of this
+extra_checks = []               # project-only checks, normally under docs/agents/checks/
+
+[phases]
+after_review = []               # e.g. ["ui_test"] for a project whose UI tickets get an agent UI test last
+
+[ui_test]                       # only read when [phases].after_review contains "ui_test"
+runbook = ""                    # how to start, drive and stop the app for a UI test
+scenarios = ""                  # folder of scenario files the tester replays
+results = ""                    # where the tester writes its result JSON
+
+[paths]
+digests = ".agent-digests"
+state = ".agent-state"
+trust_boundary = []             # globs a human must read line by line in every PR
+test_globs = ["tests/**", "**/*.test.*", "**/*.spec.*", "e2e/**", "**/fixtures/**"]
+
+# What an agent may do without asking. Anything matching `never` still stops and asks;
+# owner rulings are recorded in the PR or ticket and work continues.
+[preauth]
+allowed = [
+  "commit and push ticket branches",
+  "open or update PRs that do not target the default branch",
+  "create and remove worktrees",
+  "merge into integration branches",
+  "continue to the next ticket or wave",
+  "record a disclosure in the PR body or ticket",
+]
+never = [
+  "push or merge to the default branch",
+  "delete user data or drop tables",
+  "add a new third-party dependency",
+  "touch secrets or .env files",
+]
+# What the Stop hook matches (case-insensitive regex). The prose lists above are for the agent.
+allowed_patterns = ['\bcommit\b', '\bpush\b', '\b(open|create|update) (a |the )?(pr|pull request)', '\bworktree', '\bmerge (it |this |them )?into (the )?integration', '\b(continue|proceed|move on|next ticket|next wave)\b', '\bdisclos']
+never_patterns = ['\b(main|master|default branch)\b', '\b(delete|drop|truncate|wipe)\b', '\bdependenc', '\b(secret|credential|api key|\.env)\b', '\bforce[- ]push']
+
+[notify]
+command = ""                    # e.g. "curl -s -d @- ntfy.sh/<topic>"; receives one line on stdin
+on = ["question", "gate_red", "phase_change", "rate_limit"]
